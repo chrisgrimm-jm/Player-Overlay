@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Player Overlay — Control</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #111; color: #fff; font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .panel { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 32px; width: 400px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #666; margin-bottom: 24px; }
+    .topic-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #222; }
+    .topic-row label { font-size: 12px; color: #555; white-space: nowrap; }
+    .sport-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .sport-btn { flex: 1; padding: 8px 0; border: 1px solid #333; border-radius: 8px; background: transparent; color: #888; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.15s; }
+    .sport-btn.active { background: #e63946; border-color: #e63946; color: #fff; }
+    input[type="text"] { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; font-size: 17px; outline: none; margin-bottom: 12px; }
+    input[type="text"]:focus { border-color: #555; }
+    input[type="text"]::placeholder { color: #444; }
+    .topic-row input[type="text"] { font-size: 13px; padding: 6px 10px; margin-bottom: 0; }
+    .btn-row { display: flex; gap: 10px; }
+    .btn { flex: 1; padding: 12px 0; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.82; } .btn:active { opacity: 0.6; }
+    .btn-show { background: #e63946; color: #fff; }
+    .btn-hide { background: #333; color: #fff; }
+    #status { margin-top: 14px; font-size: 13px; color: #555; min-height: 18px; }
+    #status.ok { color: #4caf50; } #status.err { color: #e63946; }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h2>Player Overlay Control</h2>
+    <div class="topic-row">
+      <label>Topic</label>
+      <input type="text" id="topic-input" placeholder="your-unique-topic" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="sport-row">
+      <button class="sport-btn active" data-sport="NFL">NFL</button>
+      <button class="sport-btn" data-sport="MLB">MLB</button>
+      <button class="sport-btn" data-sport="NBA">NBA</button>
+      <button class="sport-btn" data-sport="NHL">NHL</button>
+    </div>
+    <input type="text" id="player-input" placeholder="Player name…" autocomplete="off" spellcheck="false">
+    <div class="btn-row">
+      <button class="btn btn-show" id="btn-show">Show</button>
+      <button class="btn btn-hide" id="btn-hide">Remove</button>
+    </div>
+    <div id="status">Ready</div>
+  </div>
+
+  <script>
+    let sport = 'NFL';
+    const topicInput = document.getElementById('topic-input');
+    const saved = new URLSearchParams(location.search).get('topic') || localStorage.getItem('overlay-topic') || '';
+    topicInput.value = saved;
+    topicInput.addEventListener('change', () => localStorage.setItem('overlay-topic', topicInput.value.trim()));
+
+    document.querySelectorAll('.sport-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sport-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        sport = btn.dataset.sport;
+      });
+    });
+
+    document.getElementById('player-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') showPlayer();
+      if (e.key === 'Escape') hidePlayer();
+    });
+    document.getElementById('btn-show').addEventListener('click', showPlayer);
+    document.getElementById('btn-hide').addEventListener('click', hidePlayer);
+
+    function getTopic() { return topicInput.value.trim(); }
+
+    function setStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = type || '';
+    }
+
+    async function publish(payload) {
+      const topic = getTopic();
+      if (!topic) { setStatus('Enter a topic name first', 'err'); return false; }
+      try {
+        await fetch('https://ntfy.sh/' + topic, { method: 'POST', body: JSON.stringify(payload) });
+        return true;
+      } catch { setStatus('Failed to send — check internet connection', 'err'); return false; }
+    }
+
+    async function showPlayer() {
+      const name = document.getElementById('player-input').value.trim();
+      if (!name) return;
+      setStatus('Sending…');
+      const ok = await publish({ action: 'show', name, sport, ts: Date.now() });
+      if (ok) setStatus('Showing: ' + name, 'ok');
+    }
+
+    async function hidePlayer() {
+      const ok = await publish({ action: 'hide' });
+      if (ok) { setStatus('Ready'); document.getElementById('player-input').value = ''; }
+    }
+  </script>
+</body>
+</html>
