@@ -24,6 +24,14 @@
     .btn-hide { background: #333; color: #fff; }
     #status { margin-top: 14px; font-size: 13px; color: #555; min-height: 18px; }
     #status.ok { color: #4caf50; } #status.err { color: #e63946; }
+    .obs-box { margin-top: 24px; padding-top: 20px; border-top: 1px solid #222; }
+    .obs-box label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-bottom: 8px; }
+    .obs-url-row { display: flex; gap: 8px; align-items: center; }
+    .obs-url { flex: 1; padding: 8px 10px; background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px; color: #7cb9e8; font-size: 11px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: all; cursor: text; }
+    .obs-url.empty { color: #333; font-style: italic; font-family: Arial, sans-serif; }
+    .copy-btn { padding: 8px 14px; background: #2a2a2a; border: none; border-radius: 8px; color: #aaa; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+    .copy-btn:hover { background: #333; color: #fff; }
+    .copy-btn.copied { background: #1a3a1a; color: #4caf50; }
   </style>
 </head>
 <body>
@@ -45,14 +53,52 @@
       <button class="btn btn-hide" id="btn-hide">Remove</button>
     </div>
     <div id="status">Ready</div>
+
+    <div class="obs-box">
+      <label>OBS Browser Source URL</label>
+      <div class="obs-url-row">
+        <div class="obs-url empty" id="obs-url">Enter a topic above to generate URL</div>
+        <button class="copy-btn" id="copy-btn">Copy</button>
+      </div>
+    </div>
   </div>
 
   <script>
     let sport = 'NFL';
     const topicInput = document.getElementById('topic-input');
+    const obsUrlEl  = document.getElementById('obs-url');
+    const copyBtn   = document.getElementById('copy-btn');
+    const BASE = 'https://chrisgrimm-jm.github.io/Player-Overlay/overlay.html';
+
     const saved = new URLSearchParams(location.search).get('topic') || localStorage.getItem('overlay-topic') || '';
     topicInput.value = saved;
-    topicInput.addEventListener('change', () => localStorage.setItem('overlay-topic', topicInput.value.trim()));
+    updateObsUrl();
+
+    topicInput.addEventListener('input', () => {
+      localStorage.setItem('overlay-topic', topicInput.value.trim());
+      updateObsUrl();
+    });
+
+    function updateObsUrl() {
+      const t = topicInput.value.trim();
+      if (t) {
+        obsUrlEl.textContent = BASE + '?topic=' + encodeURIComponent(t);
+        obsUrlEl.classList.remove('empty');
+      } else {
+        obsUrlEl.textContent = 'Enter a topic above to generate URL';
+        obsUrlEl.classList.add('empty');
+      }
+    }
+
+    copyBtn.addEventListener('click', () => {
+      const t = topicInput.value.trim();
+      if (!t) return;
+      navigator.clipboard.writeText(BASE + '?topic=' + encodeURIComponent(t)).then(() => {
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 2000);
+      });
+    });
 
     document.querySelectorAll('.sport-btn').forEach(btn => {
       btn.addEventListener('click', () => {
