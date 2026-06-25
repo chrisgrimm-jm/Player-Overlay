@@ -122,14 +122,19 @@
     let activeIndex = -1;
     let debounceTimer = null;
 
-    const SPORT_PATH = { NFL: 'football/nfl', MLB: 'baseball/mlb', NBA: 'basketball/nba', NHL: 'hockey/nhl' };
+    const SPORT_TERM = { NFL: 'NFL football player', MLB: 'MLB baseball player', NBA: 'NBA basketball player', NHL: 'NHL hockey player' };
 
     async function fetchSuggestions(query) {
       try {
-        const path = SPORT_PATH[sport] || 'football/nfl';
-        const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${path}/athletes?search=${encodeURIComponent(query)}&limit=6`);
+        const res = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({
+          action: 'query', list: 'search',
+          srsearch: query + ' ' + (SPORT_TERM[sport] || 'NFL football player'),
+          srlimit: 6, format: 'json', origin: '*'
+        }));
         const data = await res.json();
-        return (data.athletes || []).map(a => a.displayName || a.fullName).filter(Boolean);
+        return (data.query?.search || [])
+          .map(r => r.title.replace(/\s*\(.*\)$/, '').trim())
+          .filter(t => /^[A-Z][a-z]/.test(t) && t.split(' ').length >= 2);
       } catch { return []; }
     }
 
