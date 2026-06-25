@@ -287,12 +287,9 @@
         const res = await fetch('https://statsapi.mlb.com/api/v1/people/search?names=' + encodeURIComponent(name) + '&sportIds=1');
         const people = (await res.json()).people || [];
         if (!people.length) return [];
-        const urls = [];
-        for (const p of people.slice(0, 2)) {
-          urls.push(`https://content.mlb.com/images/headshots/current/180x180/${p.id}.jpg`);
-          urls.push(`https://content.mlb.com/images/headshots/current/180x180/${p.id}@2x.jpg`);
-        }
-        return urls;
+        return people.slice(0, 3).map(p =>
+          `https://img.mlbstatic.com/mlb-photos/image/upload/w_426,q_auto:best,f_auto/v1/people/${p.id}/headshot/67/current`
+        );
       } catch { return []; }
     }
 
