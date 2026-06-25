@@ -122,19 +122,43 @@
     let activeIndex = -1;
     let debounceTimer = null;
 
+    const SPORT_PATH = { NFL: 'football/nfl', MLB: 'baseball/mlb', NBA: 'basketball/nba', NHL: 'hockey/nhl' };
     const SPORT_TERM = { NFL: 'NFL football player', MLB: 'MLB baseball player', NBA: 'NBA basketball player', NHL: 'NHL hockey player' };
+    const NON_PERSON = ['high','school','university','college','stadium','arena','association','league','team','club','foundation','award','hall','museum','center','centre','city','county','district'];
 
     async function fetchSuggestions(query) {
+      const espn = await tryESPN(query);
+      if (espn.length) return espn;
+      return tryWiki(query);
+    }
+
+    async function tryESPN(query) {
+      try {
+        const path = SPORT_PATH[sport] || 'football/nfl';
+        const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${path}/athletes?search=${encodeURIComponent(query)}&limit=6`);
+        const data = await res.json();
+        return (data.athletes || []).map(a => a.displayName || a.fullName).filter(Boolean);
+      } catch { return []; }
+    }
+
+    async function tryWiki(query) {
       try {
         const res = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({
           action: 'query', list: 'search',
           srsearch: query + ' ' + (SPORT_TERM[sport] || 'NFL football player'),
-          srlimit: 6, format: 'json', origin: '*'
+          srlimit: 10, format: 'json', origin: '*'
         }));
         const data = await res.json();
         return (data.query?.search || [])
           .map(r => r.title.replace(/\s*\(.*\)$/, '').trim())
-          .filter(t => /^[A-Z][a-z]+ [A-Z][a-z]/.test(t));
+          .filter(t => {
+            if (!/^[A-Z][a-z]+ [A-Z][a-z]/.test(t)) return false;
+            const words = t.toLowerCase().split(' ');
+            if (words.length > 3) return false;
+            if (NON_PERSON.some(w => words.includes(w))) return false;
+            return true;
+          })
+          .slice(0, 6);
       } catch { return []; }
     }
 
