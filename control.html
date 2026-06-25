@@ -134,7 +134,7 @@
         const data = await res.json();
         return (data.query?.search || [])
           .map(r => r.title.replace(/\s*\(.*\)$/, '').trim())
-          .filter(t => /^[A-Z][a-z]/.test(t) && t.split(' ').length >= 2);
+          .filter(t => /^[A-Z][a-z]+ [A-Z][a-z]/.test(t));
       } catch { return []; }
     }
 
