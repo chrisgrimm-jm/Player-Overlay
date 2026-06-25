@@ -5,35 +5,54 @@
   <title>Player Overlay — Control</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #111; color: #fff; font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .panel { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 32px; width: 400px; }
-    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #666; margin-bottom: 24px; }
+    body { background: #111; color: #fff; font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .panel { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 28px; width: 420px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #666; margin-bottom: 20px; }
+
     .topic-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #222; }
     .topic-row label { font-size: 12px; color: #555; white-space: nowrap; }
-    .sport-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .topic-row input { flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 13px; outline: none; }
+    .topic-row input:focus { border-color: #555; }
+
+    .sport-row { display: flex; gap: 8px; margin-bottom: 14px; }
     .sport-btn { flex: 1; padding: 8px 0; border: 1px solid #333; border-radius: 8px; background: transparent; color: #888; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.15s; }
     .sport-btn.active { background: #e63946; border-color: #e63946; color: #fff; }
-    input[type="text"] { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; font-size: 17px; outline: none; margin-bottom: 12px; }
-    input[type="text"]:focus { border-color: #555; }
-    input[type="text"]::placeholder { color: #444; }
-    .topic-row input[type="text"] { font-size: 13px; padding: 6px 10px; margin-bottom: 0; }
-    .autocomplete-wrap { position: relative; margin-bottom: 12px; }
-    .autocomplete-wrap input { margin-bottom: 0; width: 100%; }
+
+    .autocomplete-wrap { position: relative; margin-bottom: 14px; }
+    .autocomplete-wrap input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #333; background: #222; color: #fff; font-size: 17px; outline: none; }
+    .autocomplete-wrap input:focus { border-color: #555; }
+    .autocomplete-wrap input::placeholder { color: #444; }
     .suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e1e1e; border: 1px solid #444; border-radius: 10px; overflow: hidden; z-index: 10; display: none; }
     .suggestions.open { display: block; }
     .suggestion { padding: 11px 14px; font-size: 15px; cursor: pointer; color: #ddd; transition: background 0.1s; }
     .suggestion:hover, .suggestion.active { background: #2a2a2a; color: #fff; }
+
+    /* Photo preview */
+    .preview-box { display: none; margin-bottom: 14px; border-radius: 10px; overflow: hidden; background: #0d0d0d; border: 1px solid #2a2a2a; }
+    .preview-box.visible { display: block; }
+    .preview-img-wrap { position: relative; height: 220px; }
+    .preview-img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+    .preview-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #0d0d0d; color: #555; font-size: 13px; }
+    .preview-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-top: 1px solid #222; }
+    .nav-btn { background: transparent; border: 1px solid #333; color: #aaa; border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+    .nav-btn:hover { background: #2a2a2a; color: #fff; }
+    .nav-btn:disabled { opacity: 0.25; cursor: default; }
+    .photo-count { font-size: 12px; color: #555; }
+
     .btn-row { display: flex; gap: 10px; }
     .btn { flex: 1; padding: 12px 0; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: opacity 0.15s; }
     .btn:hover { opacity: 0.82; } .btn:active { opacity: 0.6; }
+    .btn:disabled { opacity: 0.3; cursor: default; }
     .btn-show { background: #e63946; color: #fff; }
     .btn-hide { background: #333; color: #fff; }
-    #status { margin-top: 14px; font-size: 13px; color: #555; min-height: 18px; }
+
+    #status { margin-top: 12px; font-size: 13px; color: #555; min-height: 18px; }
     #status.ok { color: #4caf50; } #status.err { color: #e63946; }
-    .obs-box { margin-top: 24px; padding-top: 20px; border-top: 1px solid #222; }
+
+    .obs-box { margin-top: 20px; padding-top: 18px; border-top: 1px solid #222; }
     .obs-box label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-bottom: 8px; }
     .obs-url-row { display: flex; gap: 8px; align-items: center; }
-    .obs-url { flex: 1; padding: 8px 10px; background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px; color: #7cb9e8; font-size: 11px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: all; cursor: text; }
+    .obs-url { flex: 1; padding: 8px 10px; background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px; color: #7cb9e8; font-size: 11px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .obs-url.empty { color: #333; font-style: italic; font-family: Arial, sans-serif; }
     .copy-btn { padding: 8px 14px; background: #2a2a2a; border: none; border-radius: 8px; color: #aaa; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
     .copy-btn:hover { background: #333; color: #fff; }
@@ -43,22 +62,38 @@
 <body>
   <div class="panel">
     <h2>Player Overlay Control</h2>
+
     <div class="topic-row">
       <label>Topic</label>
       <input type="text" id="topic-input" placeholder="your-unique-topic" autocomplete="off" spellcheck="false">
     </div>
+
     <div class="sport-row">
       <button class="sport-btn active" data-sport="NFL">NFL</button>
       <button class="sport-btn" data-sport="MLB">MLB</button>
       <button class="sport-btn" data-sport="NBA">NBA</button>
       <button class="sport-btn" data-sport="NHL">NHL</button>
     </div>
+
     <div class="autocomplete-wrap">
       <input type="text" id="player-input" placeholder="Player name…" autocomplete="off" spellcheck="false">
       <div class="suggestions" id="suggestions"></div>
     </div>
+
+    <div class="preview-box" id="preview-box">
+      <div class="preview-img-wrap">
+        <div class="preview-loading" id="preview-loading">Searching…</div>
+        <img id="preview-img" src="" alt="" style="display:none;">
+      </div>
+      <div class="preview-nav">
+        <button class="nav-btn" id="btn-prev">← Prev</button>
+        <span class="photo-count" id="photo-count">—</span>
+        <button class="nav-btn" id="btn-next">Next →</button>
+      </div>
+    </div>
+
     <div class="btn-row">
-      <button class="btn btn-show" id="btn-show">Show</button>
+      <button class="btn btn-show" id="btn-show" disabled>Send to Stream</button>
       <button class="btn btn-hide" id="btn-hide">Remove</button>
     </div>
     <div id="status">Ready</div>
@@ -74,176 +109,284 @@
 
   <script>
     let sport = 'NFL';
-    const topicInput = document.getElementById('topic-input');
-    const obsUrlEl  = document.getElementById('obs-url');
-    const copyBtn   = document.getElementById('copy-btn');
+    let candidates = [];
+    let currentIndex = 0;
+    let currentName = '';
+
+    const topicInput  = document.getElementById('topic-input');
+    const obsUrlEl    = document.getElementById('obs-url');
+    const copyBtn     = document.getElementById('copy-btn');
+    const playerInput = document.getElementById('player-input');
+    const suggestionsEl = document.getElementById('suggestions');
+    const previewBox  = document.getElementById('preview-box');
+    const previewImg  = document.getElementById('preview-img');
+    const previewLoad = document.getElementById('preview-loading');
+    const photoCount  = document.getElementById('photo-count');
+    const btnShow     = document.getElementById('btn-show');
+    const btnPrev     = document.getElementById('btn-prev');
+    const btnNext     = document.getElementById('btn-next');
+
     const BASE = 'https://chrisgrimm-jm.github.io/Player-Overlay/overlay.html';
 
+    // Topic
     const saved = new URLSearchParams(location.search).get('topic') || localStorage.getItem('overlay-topic') || '';
     topicInput.value = saved;
     updateObsUrl();
-
-    topicInput.addEventListener('input', () => {
-      localStorage.setItem('overlay-topic', topicInput.value.trim());
-      updateObsUrl();
-    });
-
+    topicInput.addEventListener('input', () => { localStorage.setItem('overlay-topic', topicInput.value.trim()); updateObsUrl(); });
     function updateObsUrl() {
       const t = topicInput.value.trim();
-      if (t) {
-        obsUrlEl.textContent = BASE + '?topic=' + encodeURIComponent(t);
-        obsUrlEl.classList.remove('empty');
-      } else {
-        obsUrlEl.textContent = 'Enter a topic above to generate URL';
-        obsUrlEl.classList.add('empty');
-      }
+      if (t) { obsUrlEl.textContent = BASE + '?topic=' + encodeURIComponent(t); obsUrlEl.classList.remove('empty'); }
+      else { obsUrlEl.textContent = 'Enter a topic above to generate URL'; obsUrlEl.classList.add('empty'); }
     }
-
     copyBtn.addEventListener('click', () => {
-      const t = topicInput.value.trim();
-      if (!t) return;
+      const t = topicInput.value.trim(); if (!t) return;
       navigator.clipboard.writeText(BASE + '?topic=' + encodeURIComponent(t)).then(() => {
-        copyBtn.textContent = 'Copied!';
-        copyBtn.classList.add('copied');
+        copyBtn.textContent = 'Copied!'; copyBtn.classList.add('copied');
         setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 2000);
       });
     });
 
+    // Sport selector
     document.querySelectorAll('.sport-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.sport-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        sport = btn.dataset.sport;
+        btn.classList.add('active'); sport = btn.dataset.sport;
       });
     });
 
-    const playerInput = document.getElementById('player-input');
-    const suggestionsEl = document.getElementById('suggestions');
-    let activeIndex = -1;
-    let debounceTimer = null;
-
+    // Autocomplete
+    let activeIndex = -1, debounceTimer = null;
     const SPORT_PATH = { NFL: 'football/nfl', MLB: 'baseball/mlb', NBA: 'basketball/nba', NHL: 'hockey/nhl' };
     const SPORT_TERM = { NFL: 'NFL football player', MLB: 'MLB baseball player', NBA: 'NBA basketball player', NHL: 'NHL hockey player' };
     const NON_PERSON = ['high','school','university','college','stadium','arena','association','league','team','club','foundation','award','hall','museum','center','centre','city','county','district'];
 
     async function fetchSuggestions(query) {
-      const espn = await tryESPN(query);
+      const espn = await tryESPNSuggest(query);
       if (espn.length) return espn;
-      return tryWiki(query);
+      return tryWikiSuggest(query);
     }
-
-    async function tryESPN(query) {
+    async function tryESPNSuggest(query) {
       try {
-        const path = SPORT_PATH[sport] || 'football/nfl';
-        const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${path}/athletes?search=${encodeURIComponent(query)}&limit=6`);
-        const data = await res.json();
-        return (data.athletes || []).map(a => a.displayName || a.fullName).filter(Boolean);
+        const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${SPORT_PATH[sport]||'football/nfl'}/athletes?search=${encodeURIComponent(query)}&limit=6`);
+        return ((await res.json()).athletes || []).map(a => a.displayName || a.fullName).filter(Boolean);
       } catch { return []; }
     }
-
-    async function tryWiki(query) {
+    async function tryWikiSuggest(query) {
       try {
-        const res = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({
-          action: 'query', list: 'search',
-          srsearch: query + ' ' + (SPORT_TERM[sport] || 'NFL football player'),
-          srlimit: 10, format: 'json', origin: '*'
-        }));
-        const data = await res.json();
-        return (data.query?.search || [])
+        const res = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch: query+' '+(SPORT_TERM[sport]||'NFL football player'), srlimit:10, format:'json', origin:'*' }));
+        return ((await res.json()).query?.search || [])
           .map(r => r.title.replace(/\s*\(.*\)$/, '').trim())
           .filter(t => {
             if (!/^[A-Z][a-z]+ [A-Z][a-z]/.test(t)) return false;
             const words = t.toLowerCase().split(' ');
-            if (words.length > 3) return false;
-            if (NON_PERSON.some(w => words.includes(w))) return false;
-            return true;
-          })
-          .slice(0, 6);
+            return words.length <= 3 && !NON_PERSON.some(w => words.includes(w));
+          }).slice(0, 6);
       } catch { return []; }
     }
 
     function renderSuggestions(names) {
       activeIndex = -1;
       if (!names.length) { suggestionsEl.classList.remove('open'); return; }
-      suggestionsEl.innerHTML = names.map((n, i) =>
-        `<div class="suggestion" data-index="${i}">${n}</div>`
-      ).join('');
+      suggestionsEl.innerHTML = names.map((n,i) => `<div class="suggestion" data-index="${i}">${n}</div>`).join('');
       suggestionsEl.querySelectorAll('.suggestion').forEach(el => {
-        el.addEventListener('mousedown', e => {
-          e.preventDefault();
-          selectSuggestion(el.textContent);
-        });
+        el.addEventListener('mousedown', e => { e.preventDefault(); selectSuggestion(el.textContent); });
       });
       suggestionsEl.classList.add('open');
     }
-
-    function selectSuggestion(name) {
-      playerInput.value = name;
-      suggestionsEl.classList.remove('open');
-      showPlayer();
-    }
-
     function updateActive(dir) {
-      const items = suggestionsEl.querySelectorAll('.suggestion');
-      if (!items.length) return;
+      const items = suggestionsEl.querySelectorAll('.suggestion'); if (!items.length) return;
       items[activeIndex]?.classList.remove('active');
       activeIndex = (activeIndex + dir + items.length) % items.length;
       items[activeIndex].classList.add('active');
       playerInput.value = items[activeIndex].textContent;
     }
-
     playerInput.addEventListener('input', () => {
       clearTimeout(debounceTimer);
       const val = playerInput.value.trim();
       if (val.length < 2) { suggestionsEl.classList.remove('open'); return; }
-      debounceTimer = setTimeout(async () => {
-        const names = await fetchSuggestions(val);
-        renderSuggestions(names);
-      }, 250);
+      debounceTimer = setTimeout(async () => renderSuggestions(await fetchSuggestions(val)), 250);
     });
-
     playerInput.addEventListener('keydown', e => {
       if (e.key === 'ArrowDown') { e.preventDefault(); updateActive(1); return; }
       if (e.key === 'ArrowUp')   { e.preventDefault(); updateActive(-1); return; }
-      if (e.key === 'Enter') { suggestionsEl.classList.remove('open'); showPlayer(); return; }
-      if (e.key === 'Escape') { suggestionsEl.classList.remove('open'); hidePlayer(); }
+      if (e.key === 'Enter')  { suggestionsEl.classList.remove('open'); searchPlayer(playerInput.value.trim()); return; }
+      if (e.key === 'Escape') { suggestionsEl.classList.remove('open'); }
     });
+    document.addEventListener('click', e => { if (!e.target.closest('.autocomplete-wrap')) suggestionsEl.classList.remove('open'); });
 
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.autocomplete-wrap')) suggestionsEl.classList.remove('open');
-    });
-    document.getElementById('btn-show').addEventListener('click', showPlayer);
-    document.getElementById('btn-hide').addEventListener('click', hidePlayer);
-
-    function getTopic() { return topicInput.value.trim(); }
-
-    function setStatus(msg, type) {
-      const el = document.getElementById('status');
-      el.textContent = msg;
-      el.className = type || '';
+    function selectSuggestion(name) {
+      playerInput.value = name;
+      suggestionsEl.classList.remove('open');
+      searchPlayer(name);
     }
+
+    // Image search — returns array of all candidates
+    const SKIP = ['logo','icon','flag','signature','blank','map','stadium','field','trophy','award','draft','combine','headshot','portrait','mugshot','arrest','president','ceremony','conference','hall','fame','pro_bowl','white_house','oval_office','signing','autograph','parade','billboard','commercial','advertisement','brand','magazine','photoshoot','photo_shoot','times_square','red_carpet','gala','premiere'];
+
+    async function getAllCandidates(name, cfg) {
+      const results = [];
+      const lead = await tryWikipediaLead(name, cfg);
+      if (lead) results.push(lead);
+      const pageImgs = await tryWikipediaPageImagesAll(name, cfg);
+      results.push(...pageImgs);
+      const commons = await tryCommonsAll(name, cfg);
+      results.push(...commons);
+      return [...new Set(results)];
+    }
+
+    async function tryWikipediaLead(name, cfg) {
+      try {
+        const s = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch:name+' '+cfg.search, srlimit:1, format:'json', origin:'*' }));
+        const title = (await s.json())?.query?.search?.[0]?.title; if (!title) return null;
+        const r = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:title, prop:'pageimages', pithumbsize:700, format:'json', origin:'*' }));
+        const src = Object.values((await r.json())?.query?.pages||{})[0]?.thumbnail?.source; if (!src) return null;
+        const low = src.toLowerCase();
+        if (SKIP.some(s => low.includes(s))) return null;
+        if (/super_bowl_\d/i.test(src)) return null;
+        return src;
+      } catch { return null; }
+    }
+
+    async function tryWikipediaPageImagesAll(name, cfg) {
+      try {
+        const s = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch:name+' '+cfg.search, srlimit:1, format:'json', origin:'*' }));
+        const title = (await s.json())?.query?.search?.[0]?.title; if (!title) return [];
+        const r = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:title, prop:'images', imlimit:30, format:'json', origin:'*' }));
+        const images = Object.values((await r.json())?.query?.pages||{})[0]?.images || [];
+        const tokens = name.toLowerCase().split(' ');
+        const ranked = images.map(i => {
+          const low = i.title.toLowerCase();
+          if (SKIP.some(s => low.includes(s))) return null;
+          if (low.includes(',') || !/\.(jpg|jpeg|png)$/i.test(low)) return null;
+          const hasYear = /20(0[0-9]|1[0-9]|2[0-4])/.test(low);
+          const hasVs   = low.includes('_vs_') || low.includes('_at_');
+          const score = cfg.prefer.filter(p => low.includes(p)).length + tokens.filter(t => low.includes(t)).length * 2 + (hasYear?2:0) + (hasVs?3:0);
+          return { title: i.title, score };
+        }).filter(Boolean).sort((a,b) => b.score - a.score).slice(0, 5);
+        const urls = await Promise.all(ranked.map(async c => {
+          const ir = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:c.title, prop:'imageinfo', iiprop:'url', iiurlwidth:700, format:'json', origin:'*' }));
+          const p = Object.values((await ir.json())?.query?.pages||{})[0];
+          return p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url || null;
+        }));
+        return urls.filter(Boolean);
+      } catch { return []; }
+    }
+
+    async function tryCommonsAll(name, cfg) {
+      try {
+        const r = await fetch('https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch:name+' '+cfg.commons, srnamespace:6, srlimit:15, format:'json', origin:'*' }));
+        const files = (await r.json())?.query?.search || [];
+        const tokens = name.toLowerCase().split(' ');
+        const ranked = files.map(f => {
+          const low = f.title.toLowerCase();
+          if (SKIP.some(s => low.includes(s))) return null;
+          if (low.includes(',') || !/\.(jpg|jpeg|png)$/i.test(low)) return null;
+          const hasYear = /20(0[0-9]|1[0-9]|2[0-4])/.test(low);
+          const hasVs   = low.includes('_vs_') || low.includes('_at_');
+          const score = cfg.prefer.filter(p => low.includes(p)).length + tokens.filter(t => low.includes(t)).length * 2 + (hasYear?2:0) + (hasVs?3:0);
+          return { title: f.title, score };
+        }).filter(Boolean).sort((a,b) => b.score - a.score).slice(0, 5);
+        const urls = await Promise.all(ranked.map(async c => {
+          const ir = await fetch('https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:c.title, prop:'imageinfo', iiprop:'url', iiurlwidth:700, format:'json', origin:'*' }));
+          const p = Object.values((await ir.json())?.query?.pages||{})[0];
+          return p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url || null;
+        }));
+        return urls.filter(Boolean);
+      } catch { return []; }
+    }
+
+    // Preview
+    const SPORT_CFG = {
+      NFL: { search:'NFL football player', commons:'NFL football', prefer:['nfl','football','rushing','passing','catching','touchdown','action','uniform','jersey'] },
+      MLB: { search:'MLB baseball player', commons:'MLB baseball', prefer:['mlb','baseball','batting','pitching','fielding','action','uniform','jersey'] },
+      NBA: { search:'NBA basketball player', commons:'NBA basketball', prefer:['nba','basketball','dunking','dribbling','action','uniform','jersey'] },
+      NHL: { search:'NHL hockey player',    commons:'NHL hockey',    prefer:['nhl','hockey','skating','action','uniform','jersey'] },
+    };
+
+    async function searchPlayer(name) {
+      if (!name) return;
+      currentName = name;
+      candidates = [];
+      currentIndex = 0;
+      btnShow.disabled = true;
+      previewBox.classList.add('visible');
+      previewImg.style.display = 'none';
+      previewLoad.style.display = 'flex';
+      previewLoad.textContent = 'Searching…';
+      photoCount.textContent = '—';
+      btnPrev.disabled = true; btnNext.disabled = true;
+      setStatus('');
+
+      const cfg = SPORT_CFG[sport] || SPORT_CFG.NFL;
+      candidates = await getAllCandidates(name, cfg);
+
+      if (!candidates.length) {
+        previewLoad.textContent = 'No photos found';
+        setStatus(`No photos found for "${name}"`, 'err');
+        return;
+      }
+      showPreview(0);
+    }
+
+    function showPreview(index) {
+      currentIndex = index;
+      previewImg.style.display = 'none';
+      previewLoad.style.display = 'flex';
+      previewLoad.textContent = 'Loading…';
+      photoCount.textContent = `${index + 1} of ${candidates.length}`;
+      btnPrev.disabled = index === 0;
+      btnNext.disabled = index === candidates.length - 1;
+      btnShow.disabled = true;
+
+      const url = candidates[index];
+      const tmp = new Image();
+      tmp.onload = () => {
+        previewImg.src = url;
+        previewImg.style.display = 'block';
+        previewLoad.style.display = 'none';
+        btnShow.disabled = false;
+      };
+      tmp.onerror = () => {
+        previewLoad.textContent = 'Image failed';
+        if (index < candidates.length - 1) showPreview(index + 1);
+      };
+      tmp.src = url;
+    }
+
+    btnPrev.addEventListener('click', () => { if (currentIndex > 0) showPreview(currentIndex - 1); });
+    btnNext.addEventListener('click', () => { if (currentIndex < candidates.length - 1) showPreview(currentIndex + 1); });
+
+    // Stream controls
+    function getTopic() { return topicInput.value.trim(); }
+    function setStatus(msg, type) { const el = document.getElementById('status'); el.textContent = msg; el.className = type || ''; }
 
     async function publish(payload) {
       const topic = getTopic();
       if (!topic) { setStatus('Enter a topic name first', 'err'); return false; }
       try {
-        await fetch('https://ntfy.sh/' + topic, { method: 'POST', body: JSON.stringify(payload) });
+        await fetch('https://ntfy.sh/' + topic, { method:'POST', body:JSON.stringify(payload) });
         return true;
       } catch { setStatus('Failed to send — check internet connection', 'err'); return false; }
     }
 
-    async function showPlayer() {
-      const name = document.getElementById('player-input').value.trim();
-      if (!name) return;
+    btnShow.addEventListener('click', async () => {
+      if (!candidates.length) return;
       setStatus('Sending…');
-      const ok = await publish({ action: 'show', name, sport, ts: Date.now() });
-      if (ok) setStatus('Showing: ' + name, 'ok');
-    }
+      const ok = await publish({ action:'show', name:currentName, url:candidates[currentIndex], ts:Date.now() });
+      if (ok) setStatus('Showing: ' + currentName, 'ok');
+    });
 
-    async function hidePlayer() {
-      const ok = await publish({ action: 'hide' });
-      if (ok) { setStatus('Ready'); document.getElementById('player-input').value = ''; }
-    }
+    document.getElementById('btn-hide').addEventListener('click', async () => {
+      const ok = await publish({ action:'hide' });
+      if (ok) {
+        setStatus('Ready');
+        playerInput.value = '';
+        previewBox.classList.remove('visible');
+        previewImg.src = '';
+        candidates = [];
+        btnShow.disabled = true;
+      }
+    });
   </script>
 </body>
 </html>

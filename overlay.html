@@ -133,10 +133,19 @@
       es.addEventListener('message', e => {
         try {
           const data = JSON.parse(JSON.parse(e.data).message);
-          if (data.action === 'show') loadPlayer(data.name, data.sport || 'NFL');
-          else if (data.action === 'hide') hide();
+          if (data.action === 'show') {
+            if (data.url) showUrl(data.name, data.url);
+            else loadPlayer(data.name, data.sport || 'NFL');
+          } else if (data.action === 'hide') hide();
         } catch {}
       });
+    }
+
+    function showUrl(name, url) {
+      currentPlayer = name;
+      img.onload = () => wrap.classList.add('visible');
+      img.onerror = () => {};
+      img.src = url;
     }
   </script>
 </body>
