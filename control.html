@@ -270,6 +270,7 @@
       const cx     = gCx.value.trim();
 
       const sources = [
+        sport === 'MLB' ? tryMLB(name) : Promise.resolve([]),
         apiKey && cx ? tryGoogle(name, cfg, apiKey, cx) : Promise.resolve([]),
         tryBing(name, cfg),
         tryWikipediaLead(name, cfg),
@@ -279,6 +280,20 @@
       const results = await Promise.all(sources);
       const flat = results.flat().filter(Boolean);
       return [...new Set(flat)];
+    }
+
+    async function tryMLB(name) {
+      try {
+        const res = await fetch('https://statsapi.mlb.com/api/v1/people/search?names=' + encodeURIComponent(name) + '&sportIds=1');
+        const people = (await res.json()).people || [];
+        if (!people.length) return [];
+        const urls = [];
+        for (const p of people.slice(0, 3)) {
+          urls.push(`https://img.mlb.com/pictures/people/${p.id}/headshot/67/current.jpg`);
+          urls.push(`https://img.mlb.com/pictures/people/${p.id}/action/67/current.jpg`);
+        }
+        return urls;
+      } catch { return []; }
     }
 
     async function tryBing(name, cfg) {
