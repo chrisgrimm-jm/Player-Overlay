@@ -288,9 +288,9 @@
         const people = (await res.json()).people || [];
         if (!people.length) return [];
         const urls = [];
-        for (const p of people.slice(0, 3)) {
-          urls.push(`https://img.mlb.com/pictures/people/${p.id}/headshot/67/current.jpg`);
-          urls.push(`https://img.mlb.com/pictures/people/${p.id}/action/67/current.jpg`);
+        for (const p of people.slice(0, 2)) {
+          urls.push(`https://content.mlb.com/images/headshots/current/180x180/${p.id}.jpg`);
+          urls.push(`https://content.mlb.com/images/headshots/current/180x180/${p.id}@2x.jpg`);
         }
         return urls;
       } catch { return []; }
