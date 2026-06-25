@@ -6,7 +6,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #111; color: #fff; font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
-    .panel { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 28px; width: 420px; }
+    .panel { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 28px; width: 460px; }
     h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: #666; margin-bottom: 20px; }
 
     .topic-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #222; }
@@ -27,17 +27,19 @@
     .suggestion { padding: 11px 14px; font-size: 15px; cursor: pointer; color: #ddd; transition: background 0.1s; }
     .suggestion:hover, .suggestion.active { background: #2a2a2a; color: #fff; }
 
-    /* Photo preview */
-    .preview-box { display: none; margin-bottom: 14px; border-radius: 10px; overflow: hidden; background: #0d0d0d; border: 1px solid #2a2a2a; }
-    .preview-box.visible { display: block; }
-    .preview-img-wrap { position: relative; height: 220px; }
-    .preview-img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
-    .preview-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #0d0d0d; color: #555; font-size: 13px; }
-    .preview-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-top: 1px solid #222; }
-    .nav-btn { background: transparent; border: 1px solid #333; color: #aaa; border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-    .nav-btn:hover { background: #2a2a2a; color: #fff; }
-    .nav-btn:disabled { opacity: 0.25; cursor: default; }
-    .photo-count { font-size: 12px; color: #555; }
+    /* Thumbnails */
+    .thumbs-section { display: none; margin-bottom: 14px; }
+    .thumbs-section.visible { display: block; }
+    .thumbs-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-bottom: 8px; }
+    .thumbs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .thumb { aspect-ratio: 3/4; overflow: hidden; border-radius: 8px; cursor: pointer; border: 3px solid transparent; background: #0d0d0d; position: relative; transition: border-color 0.15s; }
+    .thumb:hover { border-color: #555; }
+    .thumb.selected { border-color: #e63946; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+    .thumb-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .thumb-loading::after { content: ''; width: 18px; height: 18px; border: 2px solid #333; border-top-color: #666; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .thumbs-searching { color: #555; font-size: 13px; padding: 20px 0; text-align: center; }
 
     .btn-row { display: flex; gap: 10px; }
     .btn { flex: 1; padding: 12px 0; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: opacity 0.15s; }
@@ -49,7 +51,19 @@
     #status { margin-top: 12px; font-size: 13px; color: #555; min-height: 18px; }
     #status.ok { color: #4caf50; } #status.err { color: #e63946; }
 
-    .obs-box { margin-top: 20px; padding-top: 18px; border-top: 1px solid #222; }
+    /* Settings drawer */
+    .settings-toggle { background: none; border: none; color: #444; font-size: 12px; cursor: pointer; margin-top: 16px; padding: 0; }
+    .settings-toggle:hover { color: #888; }
+    .settings-drawer { display: none; margin-top: 12px; padding-top: 16px; border-top: 1px solid #1e1e1e; }
+    .settings-drawer.open { display: block; }
+    .setting-row { margin-bottom: 12px; }
+    .setting-row label { display: block; font-size: 11px; color: #555; margin-bottom: 6px; }
+    .setting-row input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 13px; outline: none; font-family: monospace; }
+    .setting-row input:focus { border-color: #555; }
+    .setting-hint { font-size: 11px; color: #444; margin-top: 5px; line-height: 1.5; }
+    .setting-hint a { color: #7cb9e8; text-decoration: none; }
+
+    .obs-box { margin-top: 16px; padding-top: 16px; border-top: 1px solid #222; }
     .obs-box label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-bottom: 8px; }
     .obs-url-row { display: flex; gap: 8px; align-items: center; }
     .obs-url { flex: 1; padding: 8px 10px; background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px; color: #7cb9e8; font-size: 11px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -80,16 +94,9 @@
       <div class="suggestions" id="suggestions"></div>
     </div>
 
-    <div class="preview-box" id="preview-box">
-      <div class="preview-img-wrap">
-        <div class="preview-loading" id="preview-loading">Searching…</div>
-        <img id="preview-img" src="" alt="" style="display:none;">
-      </div>
-      <div class="preview-nav">
-        <button class="nav-btn" id="btn-prev">← Prev</button>
-        <span class="photo-count" id="photo-count">—</span>
-        <button class="nav-btn" id="btn-next">Next →</button>
-      </div>
+    <div class="thumbs-section" id="thumbs-section">
+      <div class="thumbs-label">Select a photo</div>
+      <div class="thumbs-grid" id="thumbs-grid"></div>
     </div>
 
     <div class="btn-row">
@@ -98,45 +105,55 @@
     </div>
     <div id="status">Ready</div>
 
-    <div class="obs-box">
-      <label>OBS Browser Source URL</label>
-      <div class="obs-url-row">
-        <div class="obs-url empty" id="obs-url">Enter a topic above to generate URL</div>
-        <button class="copy-btn" id="copy-btn">Copy</button>
+    <button class="settings-toggle" id="settings-toggle">⚙ Settings</button>
+    <div class="settings-drawer" id="settings-drawer">
+      <div class="setting-row">
+        <label>Google Custom Search API Key</label>
+        <input type="text" id="google-api-key" placeholder="AIza…" autocomplete="off" spellcheck="false">
+        <div class="setting-hint">Provides better in-game action photos. Free up to 100 searches/day.<br>
+          Get a key at <a href="https://developers.google.com/custom-search/v1/overview" target="_blank">developers.google.com</a>, then create a Search Engine at <a href="https://cse.google.com" target="_blank">cse.google.com</a> set to search the whole web with SafeSearch on and Image Search enabled. Paste both below.
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>Google Custom Search Engine ID (cx)</label>
+        <input type="text" id="google-cx" placeholder="012345678901234567890:abcdefghijk" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="obs-box">
+        <label>OBS Browser Source URL</label>
+        <div class="obs-url-row">
+          <div class="obs-url empty" id="obs-url">Enter a topic above to generate URL</div>
+          <button class="copy-btn" id="copy-btn">Copy</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
     let sport = 'NFL';
-    let candidates = [];
-    let currentIndex = 0;
+    let selectedUrl = null;
     let currentName = '';
 
+    // Persist settings
     const topicInput  = document.getElementById('topic-input');
+    const gApiKey     = document.getElementById('google-api-key');
+    const gCx         = document.getElementById('google-cx');
     const obsUrlEl    = document.getElementById('obs-url');
     const copyBtn     = document.getElementById('copy-btn');
-    const playerInput = document.getElementById('player-input');
-    const suggestionsEl = document.getElementById('suggestions');
-    const previewBox  = document.getElementById('preview-box');
-    const previewImg  = document.getElementById('preview-img');
-    const previewLoad = document.getElementById('preview-loading');
-    const photoCount  = document.getElementById('photo-count');
-    const btnShow     = document.getElementById('btn-show');
-    const btnPrev     = document.getElementById('btn-prev');
-    const btnNext     = document.getElementById('btn-next');
+    const BASE        = 'https://chrisgrimm-jm.github.io/Player-Overlay/overlay.html';
 
-    const BASE = 'https://chrisgrimm-jm.github.io/Player-Overlay/overlay.html';
-
-    // Topic
-    const saved = new URLSearchParams(location.search).get('topic') || localStorage.getItem('overlay-topic') || '';
-    topicInput.value = saved;
+    topicInput.value = localStorage.getItem('overlay-topic') || '';
+    gApiKey.value    = localStorage.getItem('google-api-key') || '';
+    gCx.value        = localStorage.getItem('google-cx') || '';
     updateObsUrl();
+
     topicInput.addEventListener('input', () => { localStorage.setItem('overlay-topic', topicInput.value.trim()); updateObsUrl(); });
+    gApiKey.addEventListener('change', () => localStorage.setItem('google-api-key', gApiKey.value.trim()));
+    gCx.addEventListener('change', () => localStorage.setItem('google-cx', gCx.value.trim()));
+
     function updateObsUrl() {
       const t = topicInput.value.trim();
       if (t) { obsUrlEl.textContent = BASE + '?topic=' + encodeURIComponent(t); obsUrlEl.classList.remove('empty'); }
-      else { obsUrlEl.textContent = 'Enter a topic above to generate URL'; obsUrlEl.classList.add('empty'); }
+      else   { obsUrlEl.textContent = 'Enter a topic above to generate URL'; obsUrlEl.classList.add('empty'); }
     }
     copyBtn.addEventListener('click', () => {
       const t = topicInput.value.trim(); if (!t) return;
@@ -144,6 +161,10 @@
         copyBtn.textContent = 'Copied!'; copyBtn.classList.add('copied');
         setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 2000);
       });
+    });
+
+    document.getElementById('settings-toggle').addEventListener('click', () => {
+      document.getElementById('settings-drawer').classList.toggle('open');
     });
 
     // Sport selector
@@ -156,9 +177,12 @@
 
     // Autocomplete
     let activeIndex = -1, debounceTimer = null;
-    const SPORT_PATH = { NFL: 'football/nfl', MLB: 'baseball/mlb', NBA: 'basketball/nba', NHL: 'hockey/nhl' };
-    const SPORT_TERM = { NFL: 'NFL football player', MLB: 'MLB baseball player', NBA: 'NBA basketball player', NHL: 'NHL hockey player' };
+    const SPORT_PATH = { NFL:'football/nfl', MLB:'baseball/mlb', NBA:'basketball/nba', NHL:'hockey/nhl' };
+    const SPORT_TERM = { NFL:'NFL football player', MLB:'MLB baseball player', NBA:'NBA basketball player', NHL:'NHL hockey player' };
     const NON_PERSON = ['high','school','university','college','stadium','arena','association','league','team','club','foundation','award','hall','museum','center','centre','city','county','district'];
+
+    const playerInput   = document.getElementById('player-input');
+    const suggestionsEl = document.getElementById('suggestions');
 
     async function fetchSuggestions(query) {
       const espn = await tryESPNSuggest(query);
@@ -168,26 +192,26 @@
     async function tryESPNSuggest(query) {
       try {
         const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${SPORT_PATH[sport]||'football/nfl'}/athletes?search=${encodeURIComponent(query)}&limit=6`);
-        return ((await res.json()).athletes || []).map(a => a.displayName || a.fullName).filter(Boolean);
+        return ((await res.json()).athletes||[]).map(a=>a.displayName||a.fullName).filter(Boolean);
       } catch { return []; }
     }
     async function tryWikiSuggest(query) {
       try {
-        const res = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch: query+' '+(SPORT_TERM[sport]||'NFL football player'), srlimit:10, format:'json', origin:'*' }));
-        return ((await res.json()).query?.search || [])
+        const res = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch:query+' '+(SPORT_TERM[sport]||'NFL football player'), srlimit:10, format:'json', origin:'*' }));
+        return ((await res.json()).query?.search||[])
           .map(r => r.title.replace(/\s*\(.*\)$/, '').trim())
           .filter(t => {
             if (!/^[A-Z][a-z]+ [A-Z][a-z]/.test(t)) return false;
             const words = t.toLowerCase().split(' ');
             return words.length <= 3 && !NON_PERSON.some(w => words.includes(w));
-          }).slice(0, 6);
+          }).slice(0,6);
       } catch { return []; }
     }
 
     function renderSuggestions(names) {
       activeIndex = -1;
       if (!names.length) { suggestionsEl.classList.remove('open'); return; }
-      suggestionsEl.innerHTML = names.map((n,i) => `<div class="suggestion" data-index="${i}">${n}</div>`).join('');
+      suggestionsEl.innerHTML = names.map((n,i)=>`<div class="suggestion" data-index="${i}">${n}</div>`).join('');
       suggestionsEl.querySelectorAll('.suggestion').forEach(el => {
         el.addEventListener('mousedown', e => { e.preventDefault(); selectSuggestion(el.textContent); });
       });
@@ -220,18 +244,37 @@
       searchPlayer(name);
     }
 
-    // Image search — returns array of all candidates
+    // Image search
     const SKIP = ['logo','icon','flag','signature','blank','map','stadium','field','trophy','award','draft','combine','headshot','portrait','mugshot','arrest','president','ceremony','conference','hall','fame','pro_bowl','white_house','oval_office','signing','autograph','parade','billboard','commercial','advertisement','brand','magazine','photoshoot','photo_shoot','times_square','red_carpet','gala','premiere'];
+    const SPORT_CFG = {
+      NFL: { search:'NFL football player', commons:'NFL football', prefer:['nfl','football','rushing','passing','catching','touchdown','action','uniform','jersey'], googleQ:'NFL uniform action game' },
+      MLB: { search:'MLB baseball player', commons:'MLB baseball', prefer:['mlb','baseball','batting','pitching','fielding','action','uniform','jersey'], googleQ:'MLB uniform batting pitching game' },
+      NBA: { search:'NBA basketball player', commons:'NBA basketball', prefer:['nba','basketball','dunking','shooting','action','uniform','jersey'], googleQ:'NBA uniform game action' },
+      NHL: { search:'NHL hockey player', commons:'NHL hockey', prefer:['nhl','hockey','skating','action','uniform','jersey'], googleQ:'NHL uniform skating game action' },
+    };
 
     async function getAllCandidates(name, cfg) {
-      const results = [];
-      const lead = await tryWikipediaLead(name, cfg);
-      if (lead) results.push(lead);
-      const pageImgs = await tryWikipediaPageImagesAll(name, cfg);
-      results.push(...pageImgs);
-      const commons = await tryCommonsAll(name, cfg);
-      results.push(...commons);
-      return [...new Set(results)];
+      const apiKey = gApiKey.value.trim();
+      const cx     = gCx.value.trim();
+
+      const sources = [
+        apiKey && cx ? tryGoogle(name, cfg, apiKey, cx) : Promise.resolve([]),
+        tryWikipediaLead(name, cfg),
+        tryWikipediaPageImagesAll(name, cfg),
+        tryCommonsAll(name, cfg),
+      ];
+      const results = await Promise.all(sources);
+      const flat = results.flat().filter(Boolean);
+      return [...new Set(flat)];
+    }
+
+    async function tryGoogle(name, cfg, apiKey, cx) {
+      try {
+        const q = `${name} ${cfg.googleQ}`;
+        const res = await fetch(`https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(q)}&searchType=image&num=6&imgType=photo&imgSize=large`);
+        const data = await res.json();
+        return (data.items||[]).map(i => i.link).filter(Boolean);
+      } catch { return []; }
     }
 
     async function tryWikipediaLead(name, cfg) {
@@ -241,7 +284,7 @@
         const r = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:title, prop:'pageimages', pithumbsize:700, format:'json', origin:'*' }));
         const src = Object.values((await r.json())?.query?.pages||{})[0]?.thumbnail?.source; if (!src) return null;
         const low = src.toLowerCase();
-        if (SKIP.some(s => low.includes(s))) return null;
+        if (SKIP.some(s=>low.includes(s))) return null;
         if (/super_bowl_\d/i.test(src)) return null;
         return src;
       } catch { return null; }
@@ -252,139 +295,111 @@
         const s = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch:name+' '+cfg.search, srlimit:1, format:'json', origin:'*' }));
         const title = (await s.json())?.query?.search?.[0]?.title; if (!title) return [];
         const r = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:title, prop:'images', imlimit:30, format:'json', origin:'*' }));
-        const images = Object.values((await r.json())?.query?.pages||{})[0]?.images || [];
+        const images = Object.values((await r.json())?.query?.pages||{})[0]?.images||[];
         const tokens = name.toLowerCase().split(' ');
         const ranked = images.map(i => {
           const low = i.title.toLowerCase();
-          if (SKIP.some(s => low.includes(s))) return null;
-          if (low.includes(',') || !/\.(jpg|jpeg|png)$/i.test(low)) return null;
-          const hasYear = /20(0[0-9]|1[0-9]|2[0-4])/.test(low);
-          const hasVs   = low.includes('_vs_') || low.includes('_at_');
-          const score = cfg.prefer.filter(p => low.includes(p)).length + tokens.filter(t => low.includes(t)).length * 2 + (hasYear?2:0) + (hasVs?3:0);
-          return { title: i.title, score };
-        }).filter(Boolean).sort((a,b) => b.score - a.score).slice(0, 5);
-        const urls = await Promise.all(ranked.map(async c => {
-          const ir = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:c.title, prop:'imageinfo', iiprop:'url', iiurlwidth:700, format:'json', origin:'*' }));
-          const p = Object.values((await ir.json())?.query?.pages||{})[0];
-          return p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url || null;
-        }));
-        return urls.filter(Boolean);
+          if (SKIP.some(s=>low.includes(s))) return null;
+          if (low.includes(',')||!/\.(jpg|jpeg|png)$/i.test(low)) return null;
+          const hasYear=/20(0[0-9]|1[0-9]|2[0-4])/.test(low), hasVs=low.includes('_vs_')||low.includes('_at_');
+          const score=cfg.prefer.filter(p=>low.includes(p)).length+tokens.filter(t=>low.includes(t)).length*2+(hasYear?2:0)+(hasVs?3:0);
+          return {title:i.title,score};
+        }).filter(Boolean).sort((a,b)=>b.score-a.score).slice(0,5);
+        return (await Promise.all(ranked.map(async c=>{
+          const ir=await fetch('https://en.wikipedia.org/w/api.php?'+new URLSearchParams({action:'query',titles:c.title,prop:'imageinfo',iiprop:'url',iiurlwidth:700,format:'json',origin:'*'}));
+          const p=Object.values((await ir.json())?.query?.pages||{})[0];
+          return p?.imageinfo?.[0]?.thumburl||p?.imageinfo?.[0]?.url||null;
+        }))).filter(Boolean);
       } catch { return []; }
     }
 
     async function tryCommonsAll(name, cfg) {
       try {
-        const r = await fetch('https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch:name+' '+cfg.commons, srnamespace:6, srlimit:15, format:'json', origin:'*' }));
-        const files = (await r.json())?.query?.search || [];
-        const tokens = name.toLowerCase().split(' ');
-        const ranked = files.map(f => {
-          const low = f.title.toLowerCase();
-          if (SKIP.some(s => low.includes(s))) return null;
-          if (low.includes(',') || !/\.(jpg|jpeg|png)$/i.test(low)) return null;
-          const hasYear = /20(0[0-9]|1[0-9]|2[0-4])/.test(low);
-          const hasVs   = low.includes('_vs_') || low.includes('_at_');
-          const score = cfg.prefer.filter(p => low.includes(p)).length + tokens.filter(t => low.includes(t)).length * 2 + (hasYear?2:0) + (hasVs?3:0);
-          return { title: f.title, score };
-        }).filter(Boolean).sort((a,b) => b.score - a.score).slice(0, 5);
-        const urls = await Promise.all(ranked.map(async c => {
-          const ir = await fetch('https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:c.title, prop:'imageinfo', iiprop:'url', iiurlwidth:700, format:'json', origin:'*' }));
-          const p = Object.values((await ir.json())?.query?.pages||{})[0];
-          return p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url || null;
-        }));
-        return urls.filter(Boolean);
+        const r=await fetch('https://commons.wikimedia.org/w/api.php?'+new URLSearchParams({action:'query',list:'search',srsearch:name+' '+cfg.commons,srnamespace:6,srlimit:15,format:'json',origin:'*'}));
+        const files=(await r.json())?.query?.search||[];
+        const tokens=name.toLowerCase().split(' ');
+        const ranked=files.map(f=>{
+          const low=f.title.toLowerCase();
+          if(SKIP.some(s=>low.includes(s))) return null;
+          if(low.includes(',')||!/\.(jpg|jpeg|png)$/i.test(low)) return null;
+          const hasYear=/20(0[0-9]|1[0-9]|2[0-4])/.test(low),hasVs=low.includes('_vs_')||low.includes('_at_');
+          const score=cfg.prefer.filter(p=>low.includes(p)).length+tokens.filter(t=>low.includes(t)).length*2+(hasYear?2:0)+(hasVs?3:0);
+          return {title:f.title,score};
+        }).filter(Boolean).sort((a,b)=>b.score-a.score).slice(0,5);
+        return (await Promise.all(ranked.map(async c=>{
+          const ir=await fetch('https://commons.wikimedia.org/w/api.php?'+new URLSearchParams({action:'query',titles:c.title,prop:'imageinfo',iiprop:'url',iiurlwidth:700,format:'json',origin:'*'}));
+          const p=Object.values((await ir.json())?.query?.pages||{})[0];
+          return p?.imageinfo?.[0]?.thumburl||p?.imageinfo?.[0]?.url||null;
+        }))).filter(Boolean);
       } catch { return []; }
     }
 
-    // Preview
-    const SPORT_CFG = {
-      NFL: { search:'NFL football player', commons:'NFL football', prefer:['nfl','football','rushing','passing','catching','touchdown','action','uniform','jersey'] },
-      MLB: { search:'MLB baseball player', commons:'MLB baseball', prefer:['mlb','baseball','batting','pitching','fielding','action','uniform','jersey'] },
-      NBA: { search:'NBA basketball player', commons:'NBA basketball', prefer:['nba','basketball','dunking','dribbling','action','uniform','jersey'] },
-      NHL: { search:'NHL hockey player',    commons:'NHL hockey',    prefer:['nhl','hockey','skating','action','uniform','jersey'] },
-    };
+    // Thumbnail grid
+    const thumbsSection = document.getElementById('thumbs-section');
+    const thumbsGrid    = document.getElementById('thumbs-grid');
+    const btnShow       = document.getElementById('btn-show');
 
     async function searchPlayer(name) {
       if (!name) return;
-      currentName = name;
-      candidates = [];
-      currentIndex = 0;
-      btnShow.disabled = true;
-      previewBox.classList.add('visible');
-      previewImg.style.display = 'none';
-      previewLoad.style.display = 'flex';
-      previewLoad.textContent = 'Searching…';
-      photoCount.textContent = '—';
-      btnPrev.disabled = true; btnNext.disabled = true;
+      currentName = name; selectedUrl = null; btnShow.disabled = true;
+      thumbsSection.classList.add('visible');
+      thumbsGrid.innerHTML = '<div class="thumbs-searching">Searching for photos…</div>';
       setStatus('');
 
       const cfg = SPORT_CFG[sport] || SPORT_CFG.NFL;
-      candidates = await getAllCandidates(name, cfg);
+      const urls = await getAllCandidates(name, cfg);
 
-      if (!candidates.length) {
-        previewLoad.textContent = 'No photos found';
-        setStatus(`No photos found for "${name}"`, 'err');
-        return;
+      thumbsGrid.innerHTML = '';
+      if (!urls.length) {
+        thumbsGrid.innerHTML = '<div class="thumbs-searching">No photos found</div>';
+        setStatus(`No photos found for "${name}"`, 'err'); return;
       }
-      showPreview(0);
+
+      urls.forEach(url => {
+        const div = document.createElement('div');
+        div.className = 'thumb';
+        div.innerHTML = '<div class="thumb-loading"></div>';
+        const img = new Image();
+        img.onload = () => { div.innerHTML = ''; div.appendChild(img); };
+        img.onerror = () => { div.remove(); };
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top center;display:block;';
+        img.src = url;
+        div.addEventListener('click', () => {
+          document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('selected'));
+          div.classList.add('selected');
+          selectedUrl = url;
+          btnShow.disabled = false;
+        });
+        thumbsGrid.appendChild(div);
+      });
     }
-
-    function showPreview(index) {
-      currentIndex = index;
-      previewImg.style.display = 'none';
-      previewLoad.style.display = 'flex';
-      previewLoad.textContent = 'Loading…';
-      photoCount.textContent = `${index + 1} of ${candidates.length}`;
-      btnPrev.disabled = index === 0;
-      btnNext.disabled = index === candidates.length - 1;
-      btnShow.disabled = true;
-
-      const url = candidates[index];
-      const tmp = new Image();
-      tmp.onload = () => {
-        previewImg.src = url;
-        previewImg.style.display = 'block';
-        previewLoad.style.display = 'none';
-        btnShow.disabled = false;
-      };
-      tmp.onerror = () => {
-        previewLoad.textContent = 'Image failed';
-        if (index < candidates.length - 1) showPreview(index + 1);
-      };
-      tmp.src = url;
-    }
-
-    btnPrev.addEventListener('click', () => { if (currentIndex > 0) showPreview(currentIndex - 1); });
-    btnNext.addEventListener('click', () => { if (currentIndex < candidates.length - 1) showPreview(currentIndex + 1); });
 
     // Stream controls
     function getTopic() { return topicInput.value.trim(); }
-    function setStatus(msg, type) { const el = document.getElementById('status'); el.textContent = msg; el.className = type || ''; }
+    function setStatus(msg, type) { const el=document.getElementById('status'); el.textContent=msg; el.className=type||''; }
 
     async function publish(payload) {
       const topic = getTopic();
-      if (!topic) { setStatus('Enter a topic name first', 'err'); return false; }
+      if (!topic) { setStatus('Enter a topic name first','err'); return false; }
       try {
-        await fetch('https://ntfy.sh/' + topic, { method:'POST', body:JSON.stringify(payload) });
+        await fetch('https://ntfy.sh/'+topic, { method:'POST', body:JSON.stringify(payload) });
         return true;
-      } catch { setStatus('Failed to send — check internet connection', 'err'); return false; }
+      } catch { setStatus('Failed to send — check internet connection','err'); return false; }
     }
 
     btnShow.addEventListener('click', async () => {
-      if (!candidates.length) return;
+      if (!selectedUrl) return;
       setStatus('Sending…');
-      const ok = await publish({ action:'show', name:currentName, url:candidates[currentIndex], ts:Date.now() });
-      if (ok) setStatus('Showing: ' + currentName, 'ok');
+      const ok = await publish({ action:'show', name:currentName, url:selectedUrl, ts:Date.now() });
+      if (ok) setStatus('Showing: '+currentName, 'ok');
     });
 
     document.getElementById('btn-hide').addEventListener('click', async () => {
       const ok = await publish({ action:'hide' });
       if (ok) {
-        setStatus('Ready');
-        playerInput.value = '';
-        previewBox.classList.remove('visible');
-        previewImg.src = '';
-        candidates = [];
-        btnShow.disabled = true;
+        setStatus('Ready'); playerInput.value='';
+        thumbsSection.classList.remove('visible'); thumbsGrid.innerHTML='';
+        selectedUrl=null; btnShow.disabled=true;
       }
     });
   </script>
