@@ -287,7 +287,8 @@
         const res = await fetch('https://statsapi.mlb.com/api/v1/people/search?names=' + encodeURIComponent(name) + '&sportIds=1');
         const people = (await res.json()).people || [];
         if (!people.length) return [];
-        return people.slice(0, 3).map(p =>
+        const sorted = people.sort((a, b) => (b.active ? 1 : 0) - (a.active ? 1 : 0));
+        return sorted.slice(0, 1).map(p =>
           `https://img.mlbstatic.com/mlb-photos/image/upload/w_426,q_auto:best,f_auto/v1/people/${p.id}/headshot/67/current`
         );
       } catch { return []; }
