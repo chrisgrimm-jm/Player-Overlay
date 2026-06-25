@@ -118,6 +118,13 @@
         <label>Google Custom Search Engine ID (cx)</label>
         <input type="text" id="google-cx" placeholder="012345678901234567890:abcdefghijk" autocomplete="off" spellcheck="false">
       </div>
+      <div class="setting-row">
+        <label>Bing Image Search API Key</label>
+        <input type="text" id="bing-api-key" placeholder="Paste Bing key…" autocomplete="off" spellcheck="false">
+        <div class="setting-hint">Free tier: 1,000 searches/month — no credit card required.<br>
+          Get a free key at <a href="https://portal.azure.com" target="_blank">portal.azure.com</a> → Create a resource → search "Bing Search v7" → choose the <strong>Free (F0)</strong> tier → Keys and Endpoint → copy Key 1.
+        </div>
+      </div>
       <div class="obs-box">
         <label>OBS Browser Source URL</label>
         <div class="obs-url-row">
@@ -139,25 +146,29 @@
     const gCx         = document.getElementById('google-cx');
     const obsUrlEl    = document.getElementById('obs-url');
     const copyBtn     = document.getElementById('copy-btn');
-    const BASE        = 'https://chrisgrimm-jm.github.io/Player-Overlay/overlay.html?v=2';
+    const BASE        = 'https://chrisgrimm-jm.github.io/Player-Overlay/overlay.html?v=3';
 
-    topicInput.value = localStorage.getItem('overlay-topic') || '';
-    gApiKey.value    = localStorage.getItem('google-api-key') || '';
-    gCx.value        = localStorage.getItem('google-cx') || '';
+    const bingApiKey = document.getElementById('bing-api-key');
+
+    topicInput.value  = localStorage.getItem('overlay-topic') || '';
+    gApiKey.value     = localStorage.getItem('google-api-key') || '';
+    gCx.value         = localStorage.getItem('google-cx') || '';
+    bingApiKey.value  = localStorage.getItem('bing-api-key') || '';
     updateObsUrl();
 
     topicInput.addEventListener('input', () => { localStorage.setItem('overlay-topic', topicInput.value.trim()); updateObsUrl(); });
     gApiKey.addEventListener('change', () => localStorage.setItem('google-api-key', gApiKey.value.trim()));
     gCx.addEventListener('change', () => localStorage.setItem('google-cx', gCx.value.trim()));
+    bingApiKey.addEventListener('change', () => localStorage.setItem('bing-api-key', bingApiKey.value.trim()));
 
     function updateObsUrl() {
       const t = topicInput.value.trim();
-      if (t) { obsUrlEl.textContent = BASE + '?topic=' + encodeURIComponent(t); obsUrlEl.classList.remove('empty'); }
+      if (t) { obsUrlEl.textContent = BASE + '&topic=' + encodeURIComponent(t); obsUrlEl.classList.remove('empty'); }
       else   { obsUrlEl.textContent = 'Enter a topic above to generate URL'; obsUrlEl.classList.add('empty'); }
     }
     copyBtn.addEventListener('click', () => {
       const t = topicInput.value.trim(); if (!t) return;
-      navigator.clipboard.writeText(BASE + '?topic=' + encodeURIComponent(t)).then(() => {
+      navigator.clipboard.writeText(BASE + '&topic=' + encodeURIComponent(t)).then(() => {
         copyBtn.textContent = 'Copied!'; copyBtn.classList.add('copied');
         setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 2000);
       });
@@ -259,6 +270,7 @@
 
       const sources = [
         apiKey && cx ? tryGoogle(name, cfg, apiKey, cx) : Promise.resolve([]),
+        tryBing(name, cfg),
         tryWikipediaLead(name, cfg),
         tryWikipediaPageImagesAll(name, cfg),
         tryCommonsAll(name, cfg),
@@ -266,6 +278,19 @@
       const results = await Promise.all(sources);
       const flat = results.flat().filter(Boolean);
       return [...new Set(flat)];
+    }
+
+    async function tryBing(name, cfg) {
+      const key = bingApiKey.value.trim();
+      if (!key) return [];
+      try {
+        const q = `${name} ${cfg.googleQ}`;
+        const res = await fetch('https://api.bing.microsoft.com/v7.0/images/search?' + new URLSearchParams({ q, count: 9, imageType: 'Photo', size: 'Large', safeSearch: 'Moderate' }), {
+          headers: { 'Ocp-Apim-Subscription-Key': key }
+        });
+        const data = await res.json();
+        return (data.value || []).map(i => i.contentUrl).filter(Boolean);
+      } catch { return []; }
     }
 
     async function tryGoogle(name, cfg, apiKey, cx) {
