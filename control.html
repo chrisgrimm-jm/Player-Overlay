@@ -105,6 +105,14 @@
     </div>
     <div id="status">Ready</div>
 
+    <div class="obs-box">
+      <label>OBS Browser Source URL</label>
+      <div class="obs-url-row">
+        <div class="obs-url empty" id="obs-url">Enter a topic above to generate URL</div>
+        <button class="copy-btn" id="copy-btn">Copy</button>
+      </div>
+    </div>
+
     <button class="settings-toggle" id="settings-toggle">⚙ Settings</button>
     <div class="settings-drawer" id="settings-drawer">
       <div class="setting-row">
@@ -123,13 +131,6 @@
         <input type="text" id="bing-api-key" placeholder="Paste Bing key…" autocomplete="off" spellcheck="false">
         <div class="setting-hint">Free tier: 1,000 searches/month — no credit card required.<br>
           Get a free key at <a href="https://portal.azure.com" target="_blank">portal.azure.com</a> → Create a resource → search "Bing Search v7" → choose the <strong>Free (F0)</strong> tier → Keys and Endpoint → copy Key 1.
-        </div>
-      </div>
-      <div class="obs-box">
-        <label>OBS Browser Source URL</label>
-        <div class="obs-url-row">
-          <div class="obs-url empty" id="obs-url">Enter a topic above to generate URL</div>
-          <button class="copy-btn" id="copy-btn">Copy</button>
         </div>
       </div>
     </div>
