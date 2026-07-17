@@ -31,100 +31,14 @@
     const img  = document.getElementById('player-img');
     const topic = new URLSearchParams(location.search).get('topic') || '';
 
-    const SKIP = ['logo','icon','flag','signature','blank','map','stadium','field','trophy','award','draft','combine','headshot','portrait','mugshot','arrest','president','ceremony','conference','hall','fame','pro_bowl','white_house','oval_office','signing','autograph','parade','billboard','commercial','advertisement','brand','magazine','photoshoot','photo_shoot','times_square','red_carpet','gala','premiere'];
-
-    const SPORT_CFG = {
-      NFL: { search: 'NFL football player', commons: 'NFL football', prefer: ['nfl','football','rushing','passing','catching','touchdown','action','uniform','jersey'] },
-      MLB: { search: 'MLB baseball player', commons: 'MLB baseball', prefer: ['mlb','baseball','batting','pitching','fielding','action','uniform','jersey'] },
-      NBA: { search: 'NBA basketball player', commons: 'NBA basketball', prefer: ['nba','basketball','dunking','dribbling','action','uniform','jersey'] },
-      NHL: { search: 'NHL hockey player',    commons: 'NHL hockey',    prefer: ['nhl','hockey','skating','action','uniform','jersey'] },
-    };
-
-    let currentPlayer = null;
-
-    function hide() {
-      wrap.classList.remove('visible');
-      setTimeout(() => { img.src = ''; currentPlayer = null; }, 600);
-    }
-
-    async function loadPlayer(name, sport) {
-      currentPlayer = name;
-      const cfg = SPORT_CFG[sport] || SPORT_CFG.NFL;
-      const url = await findImage(name, cfg);
-      if (!url || currentPlayer !== name) return;
+    function showUrl(url) {
       img.onload = () => wrap.classList.add('visible');
-      img.onerror = () => {};
       img.src = url;
     }
 
-    async function findImage(name, cfg) {
-      return (await tryWikipediaLead(name, cfg))
-          || (await tryWikipediaPageImages(name, cfg))
-          || (await tryCommons(name, cfg));
-    }
-
-    async function tryWikipediaLead(name, cfg) {
-      try {
-        const s = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch: name+' '+cfg.search, srlimit:1, format:'json', origin:'*' }));
-        const title = (await s.json())?.query?.search?.[0]?.title;
-        if (!title) return null;
-        const r = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:title, prop:'pageimages', pithumbsize:700, format:'json', origin:'*' }));
-        const src = Object.values((await r.json())?.query?.pages||{})[0]?.thumbnail?.source;
-        if (!src) return null;
-        const low = src.toLowerCase();
-        if (SKIP.some(s => low.includes(s))) return null;
-        if (/super_bowl_\d/i.test(src)) return null;
-        return src;
-      } catch { return null; }
-    }
-
-    async function tryWikipediaPageImages(name, cfg) {
-      try {
-        const s = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch: name+' '+cfg.search, srlimit:1, format:'json', origin:'*' }));
-        const title = (await s.json())?.query?.search?.[0]?.title;
-        if (!title) return null;
-        const r = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:title, prop:'images', imlimit:30, format:'json', origin:'*' }));
-        const images = Object.values((await r.json())?.query?.pages||{})[0]?.images || [];
-        const tokens = name.toLowerCase().split(' ');
-        const ranked = images.map(i => {
-          const low = i.title.toLowerCase();
-          if (SKIP.some(s => low.includes(s))) return null;
-          if (low.includes(',') || !/\.(jpg|jpeg|png)$/i.test(low)) return null;
-          const hasYear = /20(0[0-9]|1[0-9]|2[0-4])/.test(low);
-          const hasVs   = low.includes('_vs_') || low.includes('_at_');
-          const score = cfg.prefer.filter(p => low.includes(p)).length
-            + tokens.filter(t => low.includes(t)).length * 2
-            + (hasYear ? 2 : 0) + (hasVs ? 3 : 0);
-          return { title: i.title, score };
-        }).filter(Boolean).sort((a,b) => b.score - a.score);
-        if (!ranked.length) return null;
-        const ir = await fetch('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:ranked[0].title, prop:'imageinfo', iiprop:'url', iiurlwidth:700, format:'json', origin:'*' }));
-        const p = Object.values((await ir.json())?.query?.pages||{})[0];
-        return p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url || null;
-      } catch { return null; }
-    }
-
-    async function tryCommons(name, cfg) {
-      try {
-        const r = await fetch('https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({ action:'query', list:'search', srsearch: name+' '+cfg.commons, srnamespace:6, srlimit:15, format:'json', origin:'*' }));
-        const files = (await r.json())?.query?.search || [];
-        const tokens = name.toLowerCase().split(' ');
-        const ranked = files.map(f => {
-          const low = f.title.toLowerCase();
-          if (SKIP.some(s => low.includes(s))) return null;
-          if (low.includes(',') || !/\.(jpg|jpeg|png)$/i.test(low)) return null;
-          const hasYear = /20(0[0-9]|1[0-9]|2[0-4])/.test(low);
-          const hasVs   = low.includes('_vs_') || low.includes('_at_');
-          const score = cfg.prefer.filter(p => low.includes(p)).length
-            + tokens.filter(t => low.includes(t)).length * 2
-            + (hasYear ? 2 : 0) + (hasVs ? 3 : 0);
-          return { title: f.title, score };
-        }).filter(Boolean).sort((a,b) => b.score - a.score);
-        if (!ranked.length) return null;
-        const ir = await fetch('https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({ action:'query', titles:ranked[0].title, prop:'imageinfo', iiprop:'url', iiurlwidth:700, format:'json', origin:'*' }));
-        const p = Object.values((await ir.json())?.query?.pages||{})[0];
-        return p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url || null;
-      } catch { return null; }
+    function hide() {
+      wrap.classList.remove('visible');
+      setTimeout(() => { img.src = ''; }, 600);
     }
 
     if (!topic) { console.warn('No topic set — add ?topic=your-topic to the URL'); }
@@ -133,19 +47,10 @@
       es.addEventListener('message', e => {
         try {
           const data = JSON.parse(JSON.parse(e.data).message);
-          if (data.action === 'show') {
-            if (data.url) showUrl(data.name, data.url);
-            else loadPlayer(data.name, data.sport || 'NFL');
-          } else if (data.action === 'hide') hide();
+          if (data.action === 'show' && data.url) showUrl(data.url);
+          else if (data.action === 'hide') hide();
         } catch {}
       });
-    }
-
-    function showUrl(name, url) {
-      currentPlayer = name;
-      img.onload = () => wrap.classList.add('visible');
-      img.onerror = () => {};
-      img.src = url;
     }
   </script>
 </body>
